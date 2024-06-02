@@ -130,6 +130,11 @@ let url_to_yojson : Opam_metadata.url option -> JSON.t = function
 	]
 	| None -> `Null
 
+let extra_sources_to_yojson : (string * Opam_metadata.url) list -> JSON.t = fun sources ->
+	`Assoc (sources |> List.map (fun (base, url) ->
+		(base, (url_to_yojson (Some url)))
+	))
+
 type depexts = {
 	required: string list;
 	optional: string list;
@@ -141,6 +146,7 @@ type buildable = {
 	version: string;
 	repository: string option;
 	src: Opam_metadata.url option [@to_yojson url_to_yojson];
+	extra_sources: (string * Opam_metadata.url) list [@to_yojson extra_sources_to_yojson];
 	build_commands: string list list;
 	install_commands: string list list;
 	depends: package_name list [@default []];
@@ -469,6 +475,14 @@ let buildable : Vars.state -> selected_package -> (repository option * Repo.look
 		version = OpamPackage.Version.to_string pkg.sel_version;
 		repository = repo |> Option.map (fun repo -> repo.repository_id);
 		src = url;
+		extra_sources = OpamFile.OPAM.extra_sources opam
+			|> List.map (fun (base, url) ->
+				let base = OpamFilename.Base.to_string base in
+				let url = Opam_metadata.url url |> Result.get_exn (fun _ ->
+					Printf.sprintf "Unsupported url: %s" (OpamUrl.to_string (OpamFile.URL.url url))
+				) in
+				(base, url)
+			);
 		depends;
 		depexts;
 		build_commands = OpamFile.OPAM.build opam |> resolve_commands;

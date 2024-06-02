@@ -1,4 +1,4 @@
-{ lib, nix, targetPackages, callPackage,
+{ lib, nix, targetPackages, callPackage, libev,
 ocaml, findlib, utop, opam-installer, opam-solver, opam-state, opam-core,
 opam-0install, buildDunePackage,
 ppx_deriving, lwt, lwt_ppx, ocurl, yojson, ppx_deriving_yojson, fileutils,
@@ -37,6 +37,7 @@ opam2nix = buildDunePackage {
 		lwt_ppx
 		ocurl
 		yojson
+		libev
 		ppx_deriving
 		ppx_deriving_yojson
 		fileutils
