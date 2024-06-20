@@ -2,12 +2,22 @@
  (name opam2nix)
  (public_name opam2nix)
  (modules :standard \ main)
- (libraries str unix yojson
-   opam-state opam-0install
-   lwt lwt.unix lwt_ppx curl curl.lwt
-   fileutils dune-build-info)
- (preprocess (pps ppx_deriving ppx_deriving_yojson lwt_ppx))
-)
+ (libraries
+  curl
+  curl.lwt
+  dune-build-info
+  fileutils
+  lwt
+  lwt.unix
+  lwt_ppx
+  opam-0install
+  opam-state
+  ppx_deriving_yojson.runtime
+  str
+  unix
+  yojson)
+ (preprocess
+  (pps ppx_deriving.show ppx_deriving.ord ppx_deriving_yojson lwt_ppx)))
 
 (executable
  (name main)
