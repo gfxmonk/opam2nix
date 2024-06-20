@@ -6,7 +6,12 @@ let commands : (string * (int -> string array -> unit)) list = [
 	"invoke", Invoke.main;
 	"resolve", Select.main;
 	"extract", Extract.main;
-	"version", Version.main;
+	"version", fun _idx _args ->
+			printf "opam2nix: %s\nopam: %s\n"
+			(match Build_info.V1.version () with
+			| None -> "n/a"
+			| Some v -> Build_info.V1.Version.to_string v)
+				OpamVersion.(to_string current)
 ]
 
 let () =

@@ -41,7 +41,7 @@ let
 				src = sources.swhid_core;
 			}
 		) {};
-		
+
 		opam-0install = callOcamlPackage ({ buildDunePackage, fmt, cmdliner, opam-state, zeroinstall-solver }:
 			buildDunePackage {
 				pname = "opam-0install";

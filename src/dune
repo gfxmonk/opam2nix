@@ -1,13 +1,11 @@
-; vim: set syntax=lisp commentstring=;\ %s:
-
 (library
  (name opam2nix)
  (public_name opam2nix)
- (modules :standard \ main version_ml)
+ (modules :standard \ main)
  (libraries str unix yojson
    opam-state opam-0install
    lwt lwt.unix lwt_ppx curl curl.lwt
-   fileutils)
+   fileutils dune-build-info)
  (preprocess (pps ppx_deriving ppx_deriving_yojson lwt_ppx))
 )
 
@@ -16,17 +14,3 @@
  (modules main)
  (public_name opam2nix)
  (libraries opam2nix))
-
-(executable
- (name version_ml)
- (modules version_ml)
- (libraries unix))
-
-(rule
- (target version.ml)
- (deps
-  ../VERSION
-  (universe) ; depends on (possibly-absent) files in .git, but dune doesn't like that
- )
- (action
-  (run ./version_ml.exe %{target})))
