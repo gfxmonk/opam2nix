@@ -40,7 +40,7 @@ let build_universe ~external_constraints ~base_packages ~constrained_versions ~d
 
 	let initial_packages = direct_definitions |> List.map (fun package ->
 		let name = package.direct_name in
-		let version = package.direct_version |> Option.default (Version.of_string "development") in
+		let version = package.direct_version |> Option.default (Version.of_string "dev") in
 		(
 			(OpamPackage.create name version),
 			Ok {

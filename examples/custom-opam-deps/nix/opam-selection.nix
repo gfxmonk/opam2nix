@@ -265,7 +265,7 @@ in
       opamSrc = "hello.opam";
       pname = "hello";
       src = self.directSrc "hello";
-      version = "development";
+      version = "dev";
     };
     js_of_ocaml = 
     {
@@ -835,7 +835,7 @@ in
       opamSrc = "vdoml.opam";
       pname = "vdoml";
       src = self.directSrc "vdoml";
-      version = "development";
+      version = "dev";
     };
     yojson = 
     {

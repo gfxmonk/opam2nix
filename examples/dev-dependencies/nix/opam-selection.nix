@@ -330,7 +330,7 @@ in
       opamSrc = "hello.opam";
       pname = "hello";
       src = self.directSrc "hello";
-      version = "development";
+      version = "dev";
     };
     lambda-term = 
     {
