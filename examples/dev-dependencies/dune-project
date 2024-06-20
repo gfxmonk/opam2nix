@@ -1,2 +1,16 @@
-(lang dune 1.11)
+(lang dune 3.15)
 (name hello)
+
+(generate_opam_files true)
+
+(source (github timbertson/opam2nix))
+(authors "tim@gfxmonk.net")
+(maintainers "tim@gfxmonk.net")
+(license "MIT")
+
+(package
+ (name hello)
+ (depends
+  (lwt (>= 2.5.1)))
+ (depopts
+  utop))

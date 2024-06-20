@@ -3,3 +3,5 @@ all: nix/opam-selection.nix
 
 nix/opam-selection.nix: Makefile
 	nix-shell -A resolve default.nix
+
+.PHONY: all nix/opam-selection.nix
