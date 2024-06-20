@@ -2,7 +2,7 @@
 { pkgs, stdenv, opam2nix }:
 let
 	args = {
-		inherit (pkgs.ocaml-ng.ocamlPackages_4_08) ocaml;
+		inherit (pkgs.ocaml-ng.ocamlPackages_4_14) ocaml;
 		selection = ./opam-selection.nix;
 		src = ../.;
 	};

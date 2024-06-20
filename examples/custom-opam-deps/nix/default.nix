@@ -8,7 +8,7 @@ let
 		sha256 = "1gjl98ly1ldxni6iswkl50i62bwriz0kpn12s03lbsrpaf54kibc";
 	};
 	args = {
-		inherit (pkgs.ocaml-ng.ocamlPackages_4_08) ocaml;
+		inherit (pkgs.ocaml-ng.ocamlPackages_4_14) ocaml;
 		selection = ./opam-selection.nix;
 		src = {
 			inherit vdoml;

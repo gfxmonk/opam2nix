@@ -1,6 +1,6 @@
 {
 	pkgs,
-	ocaml-ng, ocamlPackagesOverride ? ocaml-ng.ocamlPackages_4_13,
+	ocaml-ng, ocamlPackagesOverride ? ocaml-ng.ocamlPackages_4_14,
 }:
 let
 	sources = pkgs.callPackage ./sources.nix { sourcesFile = ./sources.json; };
