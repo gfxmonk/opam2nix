@@ -14,10 +14,12 @@ let commands : (string * (int -> string array -> unit)) list = [
 				OpamVersion.(to_string current)
 ]
 
+let usage () =
+	eprintf "Usage: opam2nix <command> [args]\n\nAvailable commands: %s.\n"
+		(commands |> List.map (fun (name, _) -> name) |> String.concat ", ")
 let () =
 	if Array.length Sys.argv <= 1 then (
-		eprintf "Usage: opam2nix <command> [args]\n\nAvailable commands: %s"
-		(commands |> List.map (fun (name, _) -> name) |> String.concat ", ");
+		usage ();
 		exit 1
 	) else (
 		let commandName = Sys.argv.(1) in
@@ -35,5 +37,5 @@ let () =
 					try action 1 Sys.argv
 					with Arg.Help err -> (prerr_string err; exit 1)
 				end
-			| None -> eprintf "Unknown command: %s\n" commandName; exit 1
+			| None -> eprintf "Unknown command: %s\n" commandName; usage (); exit 1
 	)
