@@ -280,7 +280,7 @@ module Context : Zi.S.CONTEXT with type t = solve_ctx = struct
 	= fun ctx pkg f ->
 		f
 		|> OpamFilter.partial_filter_formula (ctx.c_lookup_var pkg)
-		|> OpamFilter.filter_deps ~build:true ~post:true ~test:false ~doc:false ~dev:false ~default:false
+		|> OpamFilter.filter_deps ~build:true ~post:true ~test:false ~doc:false ~dev:false ~dev_setup:false ~default:false
 end
 
 let solve : request -> solution = fun { req_repositories; req_selection } ->

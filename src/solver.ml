@@ -154,7 +154,7 @@ module Context : Zi.S.CONTEXT with type t = universe = struct
 	= fun env pkg f ->
 		f
 		|> OpamFilter.partial_filter_formula (env.lookup_var pkg)
-		|> OpamFilter.filter_deps ~build:true ~post:true ~test:false ~doc:false ~dev:false ~default:false
+		|> OpamFilter.filter_deps ~build:true ~post:true ~test:false ~doc:false ~dev:false ~dev_setup:false ~default:false
 end
 
 
