@@ -117,15 +117,3 @@ let list_package repo package =
 	|> List.map (fun (rel_path, { p_package = package; p_opam = opam; p_url = url}) ->
 		{ repo; rel_path; opam; package; url; }
 	)
-
-let nix_digest_of_path p =
-	let hash_cmd = [ "nix-hash"; "--type"; "sha256"; "--flat"; "--base32"; "/dev/stdin" ] in
-	let (readable, writeable) = Unix.pipe ~cloexec:true () in
-	let open Cmd in
-	run_exn (exec_r ~stdin:(`FD_move readable)) ~print:false ~block:(fun hash_proc ->
-		Lwt.both
-			(file_contents (hash_proc#stdout))
-			(run_unit_exn (exec_none ~stdout:(`FD_move writeable)) ~print:false [ "nix-store"; "--dump"; p ])
-			|> Lwt.map (fun (output, ()) -> output)
-	) hash_cmd
-	|> Lwt.map (fun hash -> `sha256 hash)

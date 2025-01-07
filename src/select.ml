@@ -27,7 +27,7 @@ let nix_digest_of_git_repo p =
 			run_unit_exn (exec_none ~stdout:(`FD_move w)) ~print
 				[ "git"; "-C"; p; "archive"; "HEAD" ]
 		) [ "tar"; "x"; "-C"; tempdir ] >>= (fun () ->
-			nix_digest_of_path tempdir
+			Digest_cache.sha256_of_path ~flat:false tempdir
 		)
 	) cleanup
 
@@ -81,7 +81,7 @@ let setup_repo ~cache ~repos_base ~key spec : Repo.t Lwt.t = (
 		(* TODO this could return a temp dir which we use to avoid needing a lock on the repo *)
 		Printf.eprintf "Importing %s %s into nix store...\n" key commit;
 		Digest_cache.add_custom cache ~keys:["git:" ^ commit] (fun () ->
-			nix_digest_of_git_repo repo_path |> Lwt.map Result.ok
+			nix_digest_of_git_repo repo_path
 		) |> Lwt.map (Result.get_exn Digest_cache.string_of_error)
 	in
 

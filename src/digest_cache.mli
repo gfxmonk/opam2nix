@@ -21,6 +21,8 @@ type error = [
 
 val add : key -> opam_digest list -> t -> (nix_digest, error) result Lwt.t
 
+val sha256_of_path : flat:bool -> string -> (nix_digest, error) result Lwt.t
+
 val add_custom : t -> keys:key list -> (unit -> (nix_digest, error) result Lwt.t) -> (nix_digest, error) result Lwt.t
 
 val save : t -> unit Lwt.t
@@ -28,3 +30,5 @@ val save : t -> unit Lwt.t
 val try_load : key -> t
 
 val string_of_error : error -> string
+
+val exn_of_error : error -> exn

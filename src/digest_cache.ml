@@ -24,6 +24,9 @@ let string_of_error : error -> string = function
 	| `download_failed _ as e -> Download.string_of_error e
 	| `command_failed _ as e -> Cmd.string_of_command_failed e
 	| `error s -> s
+
+let exn_of_error : error -> exn = fun e -> failwith (string_of_error e)
+
 type opam_digest = OpamHash.t
 
 type state = {
@@ -129,11 +132,13 @@ let save cache =
 		Lwt_unix.rename tmp path
 	)
 
-let sha256_of_path p =
-	let output = Cmd.run_output_result ["nix-hash"; "--base32"; "--flat"; "--type";"sha256"; p] in
+let sha256_of_path ~flat p =
+	let flat_arg = if flat then ["--flat"] else [] in
+	let cmd = ["nix-hash"; "--base32" ] @ flat_arg @ ["--type";"sha256"; p] in
+	let output = Cmd.run_output_result cmd in
 	Lwt_result.bind_result output (fun output ->
 		match String.split_on_char '\n' output with
-			| [line] -> (Ok line)
+			| [line] -> (Ok (`sha256 line))
 			| lines -> Error (`error ("nix-hash returned:\n" ^ (String.concat "\n" lines)))
 	)
 
@@ -194,7 +199,5 @@ let add url opam_digests cache : (nix_digest, error) Result.t Lwt.t =
 		let ctx = ensure_ctx cache in
 		Download.fetch ctx ~dest:dest_channel url |> Lwt.map (Result.bind (fun () ->
 			check_digests opam_digests dest
-		)) >>= (fun () ->
-			sha256_of_path dest
-		) |> Lwt_result.map (fun digest -> `sha256 digest)
+		)) >>= (fun () -> sha256_of_path ~flat:true dest)
 	)

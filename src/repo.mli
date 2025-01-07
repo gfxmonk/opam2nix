@@ -49,8 +49,6 @@ val load_url : string -> OpamFile.URL.t option
 
 val lookup_package_versions : string -> string -> lookup_result list
 
-val nix_digest_of_path : string -> [> `sha256 of string ] Lwt.t
-
 val lookup : string -> OpamPackage.t -> lookup_result option
 
 val full_path : package -> string
