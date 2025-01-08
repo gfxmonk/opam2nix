@@ -14,6 +14,7 @@ type env = {
 	vars : Vars.state;
 	opam : OpamFile.OPAM.t;
 	opam_src: [`File of string | `Dir of string];
+	extra_sources: (string * string) list;
 	pkg: OpamPackage.t;
 }
 
@@ -54,6 +55,7 @@ let load_env () =
 	let self_name = ref None in
 	let self_version = ref None in
 	let packages = ref Name.Map.empty in
+	let extra_sources = ref [] in
 
 	let add_package impl =
 		debug " - package %s\n" (string_of_selected_package impl);
@@ -106,6 +108,15 @@ let load_env () =
 					| "version", `String version -> self_version := Some (Version.of_string version);
 					| "version", other -> unexpected_json "version" other
 
+					| "extraSources", `List pairs -> begin
+						pairs |> List.iter (fun pair ->
+							match pair with
+								| `List [`String path; `String source ] -> extra_sources := (path, source) :: !extra_sources
+								| other -> unexpected_json "extraSources entry" other
+						)
+					end
+					| "extraSources", other -> unexpected_json "extraSources" other
+
 					| other, _ -> failwith ("unexpected opamEnv key: " ^ other)
 			)
 		end
@@ -130,6 +141,7 @@ let load_env () =
 		vars = Vars.state ~is_building:true (!packages |> Name.Map.add self self_impl);
 		pkg = OpamPackage.create self self_version;
 		opam_src = self_opam_src;
+		extra_sources = !extra_sources;
 		opam;
 	}
 
@@ -208,19 +220,38 @@ let fixup_lib_dir ~dest env =
 	)
 
 let patch env =
-	(* copy all files into ./ if present *)
-	opam_file_path env.opam_src "files"
-		|> Option.filter Sys.file_exists
-		|> Option.may (fun files_path ->
-		let contents = Sys.readdir files_path
-			|> Array.map (Filename.concat files_path) in
-		Lwt_main.run (Cmd.(run_unit_exn exec_none) (List.concat [
-			[ "cp"; "-r"; "--no-preserve=mode"; "--dereference" ];
-			Array.to_list contents;
-			[ "./" ]
-		])
-		)
-	);
+	let copy_task: unit Lwt.t = begin
+		let copy_files =
+			(* copy all files into ./ if present *)
+			opam_file_path env.opam_src "files"
+				|> Option.filter Sys.file_exists
+				|> Option.to_list
+				|> Lwt_list.iter_s (fun files_path ->
+					let contents = Sys.readdir files_path
+						|> Array.map (Filename.concat files_path) in
+					Printf.eprintf "copying files from %s\n" files_path;
+					Cmd.(run_unit_exn exec_none) (List.concat [
+						[ "cp"; "-r"; "--no-preserve=mode"; "--dereference" ];
+						Array.to_list contents;
+						[ "./" ]
+					])
+			)
+		in
+	
+		let copy_extra_sources =
+			(* do the same with `extraSources` *)
+			env.extra_sources |> Lwt_list.iter_s (fun (dest, src) ->
+				Printf.eprintf "copying %s -> %s\n" src dest;
+				Cmd.(run_unit_exn exec_none) [ "cp"; "-r"; "--no-preserve=mode"; "--dereference"; src; dest ];
+			)
+		in
+		
+		let print_status = Lwt_io.eprintf "Coping files and extra_sources ...\n" in
+		Lwt_list.iter_s identity [print_status; copy_files; copy_extra_sources]
+	end in
+	
+	let () = Lwt_main.run copy_task in
+
 	let opam = env.opam in
 	let lookup_env = Vars.lookup env.vars ~self:(Some (OpamPackage.name env.pkg)) in
 	let cwd = OpamFilename.Dir.of_string (Sys.getcwd ()) in

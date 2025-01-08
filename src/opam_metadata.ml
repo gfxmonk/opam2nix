@@ -264,7 +264,7 @@ end
 
 type opam_src = [ `Dir of Nix_expr.t | `File of Nix_expr.t ]
 
-let nix_of_opam ~pkg ~deps ~(opam_src:opam_src) ~opam ~src ~url () : Nix_expr.t =
+let nix_of_opam ~pkg ~deps ~(opam_src:opam_src) ~opam ~src_expr ~src_url ~extra_sources () : Nix_expr.t =
 	let name = OpamPackage.name pkg |> OpamPackage.Name.to_string in
 	let version = OpamPackage.version pkg |> OpamPackage.Version.to_string in
 	let open Nix_expr in
@@ -286,7 +286,7 @@ let nix_of_opam ~pkg ~deps ~(opam_src:opam_src) ~opam ~src ~url () : Nix_expr.t 
 
 	let () = add_opam_deps ~add_dep opam in
 
-	let url_ends_with ext = (match url with
+	let url_ends_with ext = (match src_url with
 		| Some (`http (url,_)) -> ends_with ext url
 		| None -> false
 	) in
@@ -323,15 +323,22 @@ let nix_of_opam ~pkg ~deps ~(opam_src:opam_src) ~opam ~src ~url () : Nix_expr.t 
 		|> sorted_bindings_of_input
 		|> List.map (property_of_input (`Id "pkgs"))
 	in
+	
+	let extra_sources = extra_sources |> List.map (fun (k, v) ->
+		`Attrs [`Expr ("dest", Nix_expr.str k); `Expr ("src", v) ]
+	) in
 
 	(* TODO: separate build-only deps from propagated *)
 	attrset ([
 		"pname", Nix_expr.str (drvname_safe name);
 		"version", Nix_expr.str (drvname_safe version);
-		"src", (src |> Option.default `Null);
+		"src", (src_expr |> Option.default `Null);
 		"opamInputs", `Attrs opam_inputs;
 		"opamSrc", (match opam_src with
 			| `Dir expr -> expr
 			| `File expr -> expr
 		);
-	] @ (if nix_deps = [] then [] else ["buildInputs", `List nix_deps]))
+	]
+		@ (if nix_deps = [] then [] else ["buildInputs", `List nix_deps])
+		@ (if extra_sources = [] then [] else ["extraSources", `List extra_sources])
+	)

@@ -108,6 +108,7 @@ rec {
 		invoke = "${opam2nix}/bin/opam2nix invoke";
 		builtSelection = ({ inherit ocaml; }) // (mapAttrs (name: args:
 		if isPseudo args then args else stdenv.mkDerivation (
+			let extraSources = args.extraSources or []; in
 			{
 				inherit (args) pname version src opamSrc;
 				propagatedBuildInputs = [ocaml opam2nix opam2nixHooks] ++ (
@@ -117,16 +118,24 @@ rec {
 				buildPhase = "${invoke} build";
 				configurePhase = "true";
 				installPhase = "${invoke} install";
-				opamEnv = builtins.toJSON {
-					inherit (args) version;
-					name = args.pname;
-					deps = mapAttrs (name: impl:
-						if isPseudo impl then impl else {
-							path = impl;
-							inherit (impl) version;
-						}
-					) ({ inherit ocaml; } // args.opamInputs);
-				};
+				opamEnv = builtins.toJSON (
+					{
+						inherit (args) version;
+						name = args.pname;
+						deps = mapAttrs (name: impl:
+							if isPseudo impl then impl else {
+								path = impl;
+								inherit (impl) version;
+							}
+						) ({ inherit ocaml; } // args.opamInputs);
+					}
+					// (if extraSources == [] then { extraSources = []; } else {
+						extraSources = lib.map
+							# extraSources `dest` is the filename, `src` the nix expression for that store path
+							({dest, src}: [ dest src ])
+							extraSources;
+					})
+				);
 			}
 			// (if args.src == null then { unpackPhase = "true"; } else {})
 			// (args.drvAttrs or {})

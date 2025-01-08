@@ -39,7 +39,8 @@ val nix_of_opam
 	-> deps:< init_package : OpamPackage.t -> unit; .. >
 	-> opam_src:opam_src
 	-> opam:OpamFile.OPAM.t
-	-> src:Nix_expr.t option
-	-> url:url option
+	-> src_expr:Nix_expr.t option
+	-> src_url:url option
+	-> extra_sources: (string * Nix_expr.t) list
 	-> unit
 	-> Nix_expr.t

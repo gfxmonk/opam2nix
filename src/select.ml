@@ -158,6 +158,11 @@ let setup_external_constraints
 	)
 ;;
 
+let url_error url e =
+	let url = Option.to_string Opam_metadata.string_of_url url in
+	Printf.sprintf "%s (%s)" (Digest_cache.string_of_error e) url
+;;
+
 let write_solution ~external_constraints ~cache  ~universe installed dest =
 	let open Solver in
 	let available_packages = !(universe.packages)
@@ -188,14 +193,27 @@ let write_solution ~external_constraints ~cache  ~universe installed dest =
 	let new_packages = installed |> Lwt_list.map_p (fun pkg ->
 		let open Opam_metadata in
 		let { loaded_opam; loaded_url; src_expr; repository_expr } = OpamPackage.Map.find pkg available_packages in
-		Lwt.both (src_expr cache) (repository_expr ()) |> Lwt.map (fun (src, repository_expr) ->
-			let src = src |> Result.get_exn (fun e ->
-				let url = Option.to_string Opam_metadata.string_of_url loaded_url in
-				Printf.sprintf "%s (%s)" (Digest_cache.string_of_error e) url
+		
+		let extra_sources: (string * Nix_expr.t) list Lwt.t = OpamFile.OPAM.extra_sources loaded_opam
+			|> Lwt_list.map_p (fun (base, extra_url) ->
+				let base = OpamFilename.Base.to_string base in
+				let _: OpamFile.URL.t = extra_url in
+				let extra_url: Opam_metadata.url = Opam_metadata.url extra_url |>
+					Result.get_exn Opam_metadata.string_of_unsupported_archive in
+				(Lwt.return extra_url) >>= (fun url ->
+					Opam_metadata.nix_of_url ~cache url |> Lwt_result.map_error Digest_cache.exn_of_error |> Lwt_result.get_exn
+				) |> Lwt.map (fun nix_expr ->
+					(base, nix_expr)
+				)
 			) in
+		
+		let source_exprs = Lwt.both (src_expr cache) (extra_sources) in
+
+		Lwt.both source_exprs (repository_expr ()) |> Lwt.map (fun ((src, extra_sources), repository_expr) ->
+			let src = src |> Result.get_exn (url_error loaded_url) in
 			(OpamPackage.name pkg |> Name.to_string,
-				nix_of_opam ~deps ~pkg ~opam:loaded_opam ~url:loaded_url
-					~src ~opam_src:repository_expr ())
+				nix_of_opam ~deps ~pkg ~opam:loaded_opam ~src_url:loaded_url
+					~src_expr:src ~extra_sources ~opam_src:repository_expr ())
 		)
 	) |> Lwt_main.run in
 
