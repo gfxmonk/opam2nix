@@ -2,7 +2,10 @@ type error = [ `download_failed of string ]
 let string_of_error (`download_failed desc) =
 	"Download failed: " ^ desc
 
-let max_concurrency = 10
+let max_concurrency =
+	Sys.getenv_opt "OPAM2NIX_CONCURRENCY"
+	|> Option.map int_of_string
+	|> Option.default 10
 
 module Ctx = struct
 	type t = unit Lwt_pool.t

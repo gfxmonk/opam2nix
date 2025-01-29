@@ -160,7 +160,7 @@ let setup_external_constraints
 
 let url_error url e =
 	let url = Option.to_string Opam_metadata.string_of_url url in
-	Printf.sprintf "%s (%s)" (Digest_cache.string_of_error e) url
+	Printf.sprintf "%s (while processing %s)" (Digest_cache.string_of_error e) url
 ;;
 
 let write_solution ~external_constraints ~cache  ~universe installed dest =
