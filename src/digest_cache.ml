@@ -195,9 +195,13 @@ let add url opam_digests cache : (nix_digest, error) Result.t Lwt.t =
 	let open Lwt_result.Infix in
 	let keys = List.map key_of_opam_digest opam_digests in
 	add_custom cache ~keys (fun () ->
-		let (dest, dest_channel) = Filename.open_temp_file "opam2nix" "archive" in
-		let ctx = ensure_ctx cache in
-		Download.fetch ctx ~dest:dest_channel url |> Lwt.map (Result.bind (fun () ->
-			check_digests opam_digests dest
-		)) >>= (fun () -> sha256_of_path ~flat:true dest)
+		Tmp.with_temp_file (fun (dest, dest_channel) ->
+			let ctx = ensure_ctx cache in
+			Download.fetch ctx ~dest:dest_channel url |> Lwt.map (Result.bind (fun () ->
+				check_digests opam_digests dest
+			)) >>= (fun () ->
+				let () = close_out dest_channel in
+				sha256_of_path ~flat:true dest
+			)
+		)
 	)
