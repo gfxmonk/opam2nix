@@ -37,8 +37,8 @@ let fetch (ctx: Ctx.t) ~dest url : (unit, [> error] ) Result.t Lwt.t =
 		) |> Lwt.map (function
 			| Curl.CURLE_OK -> Ok ()
 			| err -> (
-				Printf.eprintf "Curl error: %s\n" (Curl.strerror err);
-				Error (`download_failed url)
+				Error (`download_failed (Printf.sprintf
+					"Error downloading %s: %s" url (Curl.strerror err)))
 			)
 		)
 	)
